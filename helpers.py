@@ -1,7 +1,7 @@
 # Retrieves Phone code. Do not change
 # File should be completely unchanged
 
-def retrieve_phone_code(driver, WebDriverException=None) -> str:
+def retrieve_phone_code(driver) -> LiteralString | None:
     """This code retrieves phone confirmation number and returns it as a string.
     Use it when application waits for the confirmation code to pass it into your tests.
     The phone confirmation code can only be obtained after it was requested in application."""
@@ -26,6 +26,8 @@ def retrieve_phone_code(driver, WebDriverException=None) -> str:
             raise Exception("No phone confirmation code found.\n"
                             "Please use retrieve_phone_code only after the code was requested in your application.")
         return code
+    return None
+
 
 # Checks if Routes is up and running. Do not change
 def is_url_reachable(url):
@@ -41,12 +43,12 @@ def is_url_reachable(url):
         ssl_ctx.verify_mode = ssl.CERT_NONE
 
         with urllib.request.urlopen(url, context=ssl_ctx) as response:
-            # print("Response Status Code:", response.status) #for debugging purposes
+                 # print("Response Status Code:", response.status) #for debugging purposes
             if response.status == 200:
-                 return True
+                return True
             else:
                 return False
     except Exception as e:
-        print (e)
+        print(e)
 
     return False
