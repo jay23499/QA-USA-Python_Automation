@@ -1,5 +1,8 @@
-import helpers
 import data
+import helpers
+from selenium import webdriver
+from pages import UrbanRoutesPage
+
 
 class TestUrbanRoutes:
     @classmethod
@@ -9,42 +12,38 @@ class TestUrbanRoutes:
         else:
             print("Cannot connect to Urban Routes. Check the server is on and still running")
 
+    def setup_method(self):
+        self.driver = webdriver.Chrome()
+        self.driver.get(data.URBAN_ROUTES_URL)
+        self.page = UrbanRoutesPage(self.driver)
+
+    def teardown_method(self):
+        self.driver.quit()
+
     def test_set_route(self):
-        # Add in S8
-        print("function created for set route")
-        pass
+        self.page.set_route("New York", "Boston")
 
     def test_select_plan(self):
-        # Add in S8
-        print("function created for select plan")
-        pass
+        self.page.select_plan("Premium")
 
     def test_fill_phone_number(self):
-        # Add in S8
-        print("function created for fill phone number")
-        pass
+        self.page.fill_phone_number("1234567890")
 
     def test_fill_card(self):
-        # Add in S8
-        print("function created for fill card")
-        pass
+        self.page.fill_card("4111111111111111", "12/25", "123")
 
     def test_comment_for_driver(self):
-        # Add in S8
-        print("function created for comment for driver")
-        pass
+        self.page.comment_for_driver("Please drive safely and play jazz music.")
 
     def test_order_blanket_and_handkerchiefs(self):
-        # Add in S8
-        print("function created for order blanket and handkerchiefs")
-    pass
-    def test_car_search_model_appears(self):
-        # Add in S8
-        print("function created for car search model appears")
-        pass
-    def test_order_2_ice_creams(self):
-        print("Function created for order 2 ice creams")
-        for i in range(2):
-            print(f"Ordering ice cream #{i+1}")
-            pass
+        self.page.order_accessories(["blanket", "handkerchief"])
 
+    def test_car_search_model_appears(self):
+        assert self.page.search_car_model("Tesla Model 3")
+
+    def test_order_2_ice_creams(self):
+        orders = [
+            {"flavor": "Chocolate", "quantity": 1},
+            {"flavor": "Strawberry", "quantity": 1}
+        ]
+        self.page.order_multiple_icecreams(orders)

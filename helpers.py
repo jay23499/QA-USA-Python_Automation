@@ -1,12 +1,14 @@
 # Retrieves Phone code. Do not change
 # File should be completely unchanged
+from typing import LiteralString
+
 
 def retrieve_phone_code(driver) -> LiteralString | None:
     """This code retrieves phone confirmation number and returns it as a string.
     Use it when application waits for the confirmation code to pass it into your tests.
     The phone confirmation code can only be obtained after it was requested in application."""
 
-    import json
+    from json import loads
     import time
     from selenium.common import WebDriverException
     code = None
@@ -15,7 +17,7 @@ def retrieve_phone_code(driver) -> LiteralString | None:
             logs = [log["message"] for log in driver.get_log('performance') if log.get("message")
                     and 'api/v1/number?number' in log.get("message")]
             for log in reversed(logs):
-                message_data = json.loads(log)["message"]
+                message_data = loads(log)["message"]
                 body = driver.execute_cdp_cmd('Network.getResponseBody',
                                               {'requestId': message_data["params"]["requestId"]})
                 code = ''.join([x for x in body['body'] if x.isdigit()])
