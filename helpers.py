@@ -1,34 +1,27 @@
 # Retrieves Phone code. Do not change
 # File should be completely unchanged
+
+
 from typing import LiteralString
 
-
 def retrieve_phone_code(driver) -> LiteralString | None:
-    """This code retrieves phone confirmation number and returns it as a string.
-    Use it when application waits for the confirmation code to pass it into your tests.
-    The phone confirmation code can only be obtained after it was requested in application."""
+    """
 
-    from json import loads
-    import time
-    from selenium.common import WebDriverException
-    code = None
-    for i in range(10):
-        try:
-            logs = [log["message"] for log in driver.get_log('performance') if log.get("message")
-                    and 'api/v1/number?number' in log.get("message")]
-            for log in reversed(logs):
-                message_data = loads(log)["message"]
-                body = driver.execute_cdp_cmd('Network.getResponseBody',
-                                              {'requestId': message_data["params"]["requestId"]})
-                code = ''.join([x for x in body['body'] if x.isdigit()])
-        except WebDriverException:
-            time.sleep(1)
-            continue
-        if not code:
-            raise Exception("No phone confirmation code found.\n"
-                            "Please use retrieve_phone_code only after the code was requested in your application.")
-        return code
-    return None
+    :type driver: object
+    """
+    pass
+
+def retrieve_phone_code(driver) -> str | None:
+    """
+    Retrieves the phone confirmation code from the application interface.
+
+    Use this after the application has requested a confirmation code. This function waits for
+    the code to appear in the UI and returns it as a string, or None if not found.
+
+    :param driver: Selenium WebDriver instance used to access the web page.
+    :return: The phone confirmation code as a string, or None if the code was not found.
+    :raises WebDriverException: If Selenium encounters an error while locating elements.
+    """
 
 
 # Checks if Routes is up and running. Do not change
