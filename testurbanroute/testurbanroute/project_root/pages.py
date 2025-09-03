@@ -1,5 +1,7 @@
 # pages/urban_routes_page.py
-from selenium.webdriver.common.by import By
+from importlib import import_module
+
+import pages.urban_routes_page
 import selenium.webdriver.remote.webdriver
 
 class UrbanRoutesPage:
@@ -69,3 +71,7 @@ class UrbanRoutesPage:
 
     def get_success_message(self) -> str:
         return self.driver.find_element(*self.SUCCESS_MESSAGE).text
+
+
+def urban_routes_page():
+    return None
