@@ -1,102 +1,83 @@
-from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+# main.py
+
+import data
+import helpers
+from selenium import webdriver
+from pages import UrbanRoutesPage
 
 
-class UrbanRoutesPage:
-    def __init__(self, driver):
-        self.driver = driver
-        self.wait = WebDriverWait(driver, 10)
+class TestUrbanRoutesFullFlow:
 
-    # --- Route ---
-    def enter_from(self, address):
-        from_field = self.wait.until(EC.element_to_be_clickable((By.ID, "from")))
-        from_field.clear()
-        from_field.send_keys(address)
-        from_field.send_keys(Keys.RETURN)
+    @classmethod
+    def setup_class(cls):
+        from selenium.webdriver import DesiredCapabilities
+        capabilities = DesiredCapabilities.CHROME
+        capabilities["goog:loggingPrefs"] = {'performance': 'ALL'}
+        cls.driver = webdriver.Chrome()
+        cls.driver.implicitly_wait(5)
+        if helpers.is_url_reachable(data.URBAN_ROUTES_URL):
+            print("Connected to the Urban Routes server")
+        else:
+            print("Cannot connect to Urban Routes. Check the server is on and still running")
 
-    def enter_to(self, address):
-        to_field = self.wait.until(EC.element_to_be_clickable((By.ID, "to")))
-        to_field.clear()
-        to_field.send_keys(address)
-        to_field.send_keys(Keys.RETURN)
+    # ---------------- Tests ----------------
 
-    # --- Tariff Plans ---
-    def select_plan(self, plan_name):
-        plan = self.wait.until(EC.element_to_be_clickable((By.XPATH, f"//div[text()='{plan_name}']")))
-        plan.click()
+    def test_set_address(self):
+        self.driver.get(data.URBAN_ROUTES_URL)
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.fill_address_from(data.ADDRESS_FROM)
+        routes_page.fill_address_to(data.ADDRESS_TO)
+        assert routes_page.get_from() == data.ADDRESS_FROM
+        assert routes_page.get_to() == data.ADDRESS_TO
 
-    def is_plan_selected(self, plan_name):
-        selected = self.driver.find_elements(By.XPATH, f"//div[text()='{plan_name}' and contains(@class, 'active')]")
-        return len(selected) > 0
+    def test_select_supportive_plan(self):
+        self.driver.get(data.URBAN_ROUTES_URL)
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.select_supportive_plan()
+        assert routes_page.is_plan_selected("Supportive")
 
-    # --- Phone Number ---
-    def enter_phone(self, phone_number):
-        phone_field = self.wait.until(EC.element_to_be_clickable((By.ID, "phone")))
-        phone_field.clear()
-        phone_field.send_keys(phone_number)
-        phone_field.send_keys(Keys.RETURN)
+    def test_fill_phone_number(self):
+        self.driver.get(data.URBAN_ROUTES_URL)
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.add_phone_number(data.PHONE_NUMBER)
+        assert routes_page.is_phone_verified()
 
-    def enter_sms_code(self, code):
-        code_field = self.wait.until(EC.element_to_be_clickable((By.ID, "code")))
-        code_field.clear()
-        code_field.send_keys(code)
-        code_field.send_keys(Keys.RETURN)
+    def test_add_card(self):
+        self.driver.get(data.URBAN_ROUTES_URL)
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.add_card_details(data.CARD_NUMBER, data.CARD_CODE)
+        assert routes_page.is_card_linked()
 
-    def is_phone_verified(self):
-        return "verified" in self.driver.page_source.lower()
+    def test_add_message_for_driver(self):
+        self.driver.get(data.URBAN_ROUTES_URL)
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.add_message_for_driver(data.MESSAGE_FOR_DRIVER)
+        assert routes_page.get_entered_message() == data.MESSAGE_FOR_DRIVER
 
-    # --- Payment Card ---
-    def enter_card(self, card_number):
-        card_field = self.wait.until(EC.element_to_be_clickable((By.ID, "number")))
-        card_field.clear()
-        card_field.send_keys(card_number)
+    def test_order_blanket_and_handkerchiefs(self):
+        self.driver.get(data.URBAN_ROUTES_URL)
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.order_blanket_and_handkerchiefs()
+        assert routes_page.is_item_selected("Blanket")
+        assert routes_page.is_item_selected("Handkerchiefs")
 
-    def enter_card_code(self, card_code):
-        code_field = self.wait.until(EC.element_to_be_clickable((By.ID, "code")))
-        code_field.clear()
-        code_field.send_keys(card_code)
+    def test_order_icecreams(self):
+        self.driver.get(data.URBAN_ROUTES_URL)
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.order_icecreams(count=2)
+        assert routes_page.get_item_count("Ice Cream") == 2
 
-    def switch_focus_out(self):
-        body = self.driver.find_element(By.TAG_NAME, "body")
-        body.send_keys(Keys.TAB)
+    def test_order_taxi_supportive(self):
+        self.driver.get(data.URBAN_ROUTES_URL)
+        routes_page = UrbanRoutesPage(self.driver)
+        routes_page.fill_address_from(data.ADDRESS_FROM)
+        routes_page.fill_address_to(data.ADDRESS_TO)
+        routes_page.select_supportive_plan()
+        routes_page.add_message_for_driver(data.MESSAGE_FOR_DRIVER)
+        modal_visible = routes_page.order_taxi_and_wait_for_car_search_modal()
+        assert modal_visible is True, "Car search modal did not appear"
 
-    def confirm_card_linked(self):
-        link_btn = self.wait.until(EC.element_to_be_clickable((By.XPATH, "//button[text()='Link']")))
-        link_btn.click()
-
-    def is_card_linked(self):
-        return "card linked" in self.driver.page_source.lower()
-
-    # --- Message for Driver ---
-    def enter_message(self, message):
-        msg_field = self.wait.until(EC.element_to_be_clickable((By.ID, "comment")))
-        msg_field.clear()
-        msg_field.send_keys(message)
-
-    def get_entered_message(self):
-        msg_field = self.driver.find_element(By.ID, "comment")
-        return msg_field.get_attribute("value")
-
-    # --- Extra Items ---
-    def add_item(self, item_name):
-        btn = self.wait.until(EC.element_to_be_clickable((By.XPATH, f"//div[text()='{item_name}']")))
-        btn.click()
-
-    def is_item_selected(self, item_name):
-        selected = self.driver.find_elements(By.XPATH, f"//div[text()='{item_name}' and contains(@class, 'active')]")
-        return len(selected) > 0
-
-    def get_item_count(self, item_name):
-        items = self.driver.find_elements(By.XPATH, f"//div[text()='{item_name}' and contains(@class, 'active')]")
-        return len(items)
-
-    # --- Order Submission ---
-    def submit_order(self):
-        order_btn = self.wait.until(EC.element_to_be_clickable((By.XPATH, "//button[contains(text(),'Order')]")))
-        order_btn.click()
-
-    def get_modal_message(self):
-        modal = self.wait.until(EC.visibility_of_element_located((By.CLASS_NAME, "order-modal")))
-        return modal.text
+    # ---------------- Teardown ----------------
+    @classmethod
+    def teardown_class(cls):
+        cls.driver.quit()
