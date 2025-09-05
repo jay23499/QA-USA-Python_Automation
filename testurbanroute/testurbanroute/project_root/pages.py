@@ -8,11 +8,10 @@ import helpers
 
 
 class UrbanRoutesPage:
-    def __init__(self, driver, wait_time: int = 10):
+    def __init__(self, driver: WebDriver):
         self.driver = driver
-        self.wait = WebDriverWait(driver, wait_time)
+        self.wait = WebDriverWait(driver, WAIT_TIME)
 
-    # ---------- Address ----------
     def fill_address_from(self, address: str):
         el = self.wait.until(EC.visibility_of_element_located((By.ID, "address-from")))
         el.clear()
@@ -23,15 +22,6 @@ class UrbanRoutesPage:
         el.clear()
         el.send_keys(address)
 
-    def get_from(self) -> str:
-        el = self.wait.until(EC.visibility_of_element_located((By.ID, "address-from")))
-        return el.get_attribute("value")
-
-    def get_to(self) -> str:
-        el = self.wait.until(EC.visibility_of_element_located((By.ID, "address-to")))
-        return el.get_attribute("value")
-
-    # ---------- Tariff Plan ----------
     def select_supportive_plan(self):
         btn = self.wait.until(
             EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-test='tariff-supportive']"))
@@ -39,14 +29,6 @@ class UrbanRoutesPage:
         if "active" not in btn.get_attribute("class"):
             btn.click()
 
-    def is_plan_selected(self, plan_name: str) -> bool:
-        # assumes the active plan button has "active" in class
-        if plan_name.lower() == "supportive":
-            btn = self.driver.find_element(By.CSS_SELECTOR, "[data-test='tariff-supportive']")
-            return "active" in btn.get_attribute("class")
-        return False
-
-    # ---------- Phone ----------
     def add_phone_number(self, phone_number: str):
         phone_input = self.wait.until(EC.visibility_of_element_located((By.ID, "phone")))
         phone_input.clear()
@@ -62,10 +44,6 @@ class UrbanRoutesPage:
         sms_input = self.wait.until(EC.visibility_of_element_located((By.ID, "sms-code")))
         sms_input.send_keys(sms_code)
 
-    def is_phone_verified(self) -> bool:
-        return "phone verified" in self.driver.page_source.lower()
-
-    # ---------- Card ----------
     def add_card_details(self, card_number: str, card_code: str):
         card_input = self.wait.until(EC.visibility_of_element_located((By.ID, "number")))
         card_input.clear()
@@ -79,52 +57,21 @@ class UrbanRoutesPage:
         link_btn = self.wait.until(EC.element_to_be_clickable((By.ID, "link-card")))
         link_btn.click()
 
-    def is_card_linked(self) -> bool:
-        return "card linked" in self.driver.page_source.lower()
-
-    # ---------- Message ----------
     def add_message_for_driver(self, message: str):
         msg_box = self.wait.until(EC.visibility_of_element_located((By.ID, "comment")))
         msg_box.clear()
         msg_box.send_keys(message)
 
-    def get_entered_message(self) -> str:
-        msg_box = self.driver.find_element(By.ID, "comment")
-        return msg_box.get_attribute("value")
-
-    # ---------- Items ----------
     def order_blanket_and_handkerchiefs(self):
-        blanket_toggle = self.wait.until(EC.element_to_be_clickable((By.ID, "blanket")))
-        blanket_toggle.click()
-        handkerchiefs_toggle = self.wait.until(EC.element_to_be_clickable((By.ID, "handkerchiefs")))
-        handkerchiefs_toggle.click()
-
-    def is_item_selected(self, item_name: str) -> bool:
-        try:
-            if item_name.lower() == "blanket":
-                el = self.driver.find_element(By.ID, "blanket")
-            elif item_name.lower() == "handkerchiefs":
-                el = self.driver.find_element(By.ID, "handkerchiefs")
-            elif item_name.lower() == "ice cream":
-                el = self.driver.find_element(By.ID, "icecream")
-            else:
-                return False
-            return "active" in el.get_attribute("class")
-        except Exception:
-            return False
+        toggle = self.wait.until(EC.element_to_be_clickable((By.ID, "blanket")))
+        toggle.click()
+        assert "active" in toggle.get_attribute("class")
 
     def order_icecreams(self, count: int = 2):
         btn = self.wait.until(EC.element_to_be_clickable((By.ID, "icecream")))
         for _ in range(count):
             btn.click()
 
-    def get_item_count(self, item_name: str) -> int:
-        if item_name.lower() == "ice cream":
-            els = self.driver.find_elements(By.CSS_SELECTOR, "#icecream.active")
-            return len(els)
-        return 0
-
-    # ---------- Order ----------
     def order_taxi_and_wait_for_car_search_modal(self) -> bool:
         order_btn = self.wait.until(EC.element_to_be_clickable((By.ID, "order-taxi")))
         order_btn.click()
