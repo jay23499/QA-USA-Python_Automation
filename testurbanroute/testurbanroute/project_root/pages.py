@@ -1,79 +1,80 @@
 # pages.py
-
 from selenium.webdriver.common.by import By
-from selenium.webdriver.common.keys import Keys
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-import helpers
-
+from selenium.webdriver.support.ui import WebDriverWait
 
 class UrbanRoutesPage:
-    def __init__(self, driver: WebDriver):
-        self.driver = driver
-        self.wait = WebDriverWait(driver, WAIT_TIME)
+    """Page Object Model for the Urban Routes App"""
 
+    # --- LOCATORS ---
+    FROM_FIELD = (By.ID, "from")
+    TO_FIELD = (By.ID, "to")
+    SUGGESTION = (By.CLASS_NAME, "suggestion")
+    PHONE_FIELD = (By.ID, "phone")
+    NEXT_BUTTON = (By.CLASS_NAME, "button")
+    CARD_FIELD = (By.ID, "number")
+    CODE_FIELD = (By.ID, "code")
+    MESSAGE_FIELD = (By.ID, "comment")
+    ORDER_BUTTON = (By.CLASS_NAME, "smart-button")
+    ROUTE_INFO = (By.CLASS_NAME, "route-details")
+    ORDER_CONFIRMATION = (By.CLASS_NAME, "order-confirm")  # replace with real class/ID
+
+    def __init__(self, driver, wait: WebDriverWait):
+        self.driver = driver
+        self.wait = wait
+
+    # --- METHODS TO INTERACT WITH ELEMENTS ---
     def fill_address_from(self, address: str):
-        el = self.wait.until(EC.visibility_of_element_located((By.ID, "address-from")))
+        el = self.wait.until(EC.visibility_of_element_located(self.FROM_FIELD))
         el.clear()
         el.send_keys(address)
+        suggestion = self.wait.until(EC.visibility_of_element_located(self.SUGGESTION))
+        suggestion.click()
 
     def fill_address_to(self, address: str):
-        el = self.wait.until(EC.visibility_of_element_located((By.ID, "address-to")))
+        el = self.wait.until(EC.visibility_of_element_located(self.TO_FIELD))
         el.clear()
         el.send_keys(address)
+        suggestion = self.wait.until(EC.visibility_of_element_located(self.SUGGESTION))
+        suggestion.click()
 
-    def select_supportive_plan(self):
-        btn = self.wait.until(
-            EC.element_to_be_clickable((By.CSS_SELECTOR, "[data-test='tariff-supportive']"))
-        )
-        if "active" not in btn.get_attribute("class"):
-            btn.click()
+    def fill_phone(self, phone: str):
+        el = self.wait.until(EC.visibility_of_element_located(self.PHONE_FIELD))
+        el.clear()
+        el.send_keys(phone)
 
-    def add_phone_number(self, phone_number: str):
-        phone_input = self.wait.until(EC.visibility_of_element_located((By.ID, "phone")))
-        phone_input.clear()
-        phone_input.send_keys(phone_number)
+    def click_next(self):
+        btn = self.wait.until(EC.element_to_be_clickable(self.NEXT_BUTTON))
+        btn.click()
 
-        confirm_btn = self.wait.until(
-            EC.element_to_be_clickable((By.ID, "confirm-phone"))
-        )
-        confirm_btn.click()
+    def fill_card_details(self, number: str, code: str):
+        card = self.wait.until(EC.visibility_of_element_located(self.CARD_FIELD))
+        card.clear()
+        card.send_keys(number)
+        code_field = self.wait.until(EC.visibility_of_element_located(self.CODE_FIELD))
+        code_field.clear()
+        code_field.send_keys(code)
 
-        sms_code_raw = helpers.retrieve_phone_code(phone_number)
-        sms_code = str(sms_code_raw) if sms_code_raw else ""
-        sms_input = self.wait.until(EC.visibility_of_element_located((By.ID, "sms-code")))
-        sms_input.send_keys(sms_code)
+    def fill_message(self, message: str):
+        el = self.wait.until(EC.visibility_of_element_located(self.MESSAGE_FIELD))
+        el.clear()
+        el.send_keys(message)
 
-    def add_card_details(self, card_number: str, card_code: str):
-        card_input = self.wait.until(EC.visibility_of_element_located((By.ID, "number")))
-        card_input.clear()
-        card_input.send_keys(card_number)
+    def click_order(self):
+        btn = self.wait.until(EC.element_to_be_clickable(self.ORDER_BUTTON))
+        btn.click()
 
-        code_input = self.wait.until(EC.visibility_of_element_located((By.ID, "code")))
-        code_input.clear()
-        code_input.send_keys(card_code)
-        code_input.send_keys(Keys.TAB)
+    def route_is_displayed(self) -> bool:
+        return self.wait.until(EC.visibility_of_element_located(self.ROUTE_INFO)) is not None
 
-        link_btn = self.wait.until(EC.element_to_be_clickable((By.ID, "link-card")))
-        link_btn.click()
+    def order_is_confirmed(self) -> bool:
+        return self.wait.until(EC.visibility_of_element_located(self.ORDER_CONFIRMATION)) is not None
 
-    def add_message_for_driver(self, message: str):
-        msg_box = self.wait.until(EC.visibility_of_element_located((By.ID, "comment")))
-        msg_box.clear()
-        msg_box.send_keys(message)
-
-    def order_blanket_and_handkerchiefs(self):
-        toggle = self.wait.until(EC.element_to_be_clickable((By.ID, "blanket")))
-        toggle.click()
-        assert "active" in toggle.get_attribute("class")
-
-    def order_icecreams(self, count: int = 2):
-        btn = self.wait.until(EC.element_to_be_clickable((By.ID, "icecream")))
-        for _ in range(count):
-            btn.click()
-
-    def order_taxi_and_wait_for_car_search_modal(self) -> bool:
-        order_btn = self.wait.until(EC.element_to_be_clickable((By.ID, "order-taxi")))
-        order_btn.click()
-        modal = self.wait.until(EC.visibility_of_element_located((By.ID, "car-search-modal")))
-        return modal.is_displayed()
+    # --- Example of loop moved to the page class ---
+    def order_multiple_icecreams(self, flavors: list):
+        """Loop through a list of icecream flavors and add them to the order"""
+        for flavor in flavors:
+            flavor_element = self.wait.until(
+                EC.element_to_be_clickable((By.XPATH, f"//button[text()='{flavor}']"))
+            )
+            flavor_element.click()
